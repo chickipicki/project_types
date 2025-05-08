@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор: Класифікація ІТ-проєктів</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f6f8; /* Updated */
+            color: #343a40; /* Updated */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .simulator-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 850px;
+            margin: 20px auto;
+        }
+        .simulator-container h1 {
+            color: #007bff; /* Updated */
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .simulator-container > p {
+            text-align: center;
+            color: #495057; /* Updated */
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .scenario {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .scenario:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        .scenario h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #007bff; /* Updated */
+            font-size: 1.6em;
+            border-bottom: 2px solid #007bff; /* Updated */
+            padding-bottom: 10px;
+        }
+        .scenario h4 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #3c4043;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .scenario p {
+            margin-bottom: 15px;
+            line-height: 1.7;
+            color: #4f4f4f;
+            font-size: 1.05em;
+        }
+        .options label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 15px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            background-color: #f8f9fa;
+        }
+        .options label:hover {
+            background-color: #e2e6ea; /* Updated */
+            border-color: #007bff; /* Updated */
+        }
+        .options input[type="radio"] {
+            display: none; /* Hide default radio button */
+        }
+        .options input[type="radio"] + span {
+            display: inline-block;
+            position: relative;
+            padding-left: 30px; /* Space for custom radio */
+            line-height: 20px;
+            font-size: 1em;
+            color: #3c4043;
+        }
+        .options input[type="radio"] + span::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #5f6368;
+            border-radius: 50%;
+            background-color: #fff;
+            box-sizing: border-box;
+        }
+        .options input[type="radio"]:checked + span::before {
+            border-color: #007bff; /* Updated */
+            background-color: #007bff; /* Updated */
+        }
+        .options input[type="radio"]:checked + span::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+        }
+        .options input[type="radio"]:checked + span {
+            color: #007bff; /* Updated */
+            font-weight: 600;
+        }
+        button {
+            background-color: #17A2B8; /* New teal */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            display: block;
+            margin-top: 20px;
+            min-width: 150px;
+        }
+        button:hover {
+            background-color: #138496; /* Darker teal */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 18px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        .correct {
+            background-color: #d4edda; /* Updated Light Green */
+            color: #155724; /* Updated Dark Green */
+            border: 1px solid #c3e6cb; /* Updated Border Green */
+        }
+        .incorrect {
+            background-color: #f8d7da; /* Updated Light Red */
+            color: #721c24; /* Updated Dark Red */
+            border: 1px solid #f5c6cb; /* Updated Border Red */
+        }
+        .explanation {
+            margin-top: 12px;
+            font-style: italic;
+            color: #495057; /* Updated */
+            font-size: 0.95em;
+        }
+        .show-explanation-btn {
+            background-color: #6c757d; /* Secondary button color */
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background-color 0.2s;
+        }
+        .show-explanation-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="simulator-container">
+        <h1>Симулятор: Класифікація ІТ-проєктів</h1>
+        <p>Проаналізуйте наведені сценарії, визначте тип ІТ-проєкту та прийміть найкраще рішення.</p>
+
+        <div class="scenario" id="scenario1">
+            <h3>Сценарій 1: Стартап "Швидка доставка їжі"</h3>
+            <p>Молода команда ентузіастів вирішила створити власний мобільний додаток для швидкого замовлення їжі. Вони самостійно придумують ідею, розробляють функціонал, тестують продукт, запускають його на ринок і отримують прибуток від кінцевих користувачів. Всі рішення приймаються всередині команди, а додаток є їхньою інтелектуальною власністю. Команда не працює на замовлення сторонньої компанії, а створює власний продукт для продажу на ринку.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує створення цього додатку?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario1_choice" value="a"><span>Сервісний (Service-based)</span></label>
+                <label><input type="radio" name="scenario1_choice" value="b"><span>Продуктовий (Product-based)</span></label>
+                <label><input type="radio" name="scenario1_choice" value="c"><span>Аутсорсинговий (Outsourcing)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario1', 'b', 'Це типовий продуктовий проєкт: команда створює власний продукт, контролює всі етапи розробки та отримує прибуток від кінцевих користувачів.')">Перевірити</button>
+            <div class="result" id="result-scenario1"></div>
+        </div>
+
+        <div class="scenario" id="scenario2">
+            <h3>Сценарій 2: Замовлення CRM для компанії</h3>
+            <p>Українська компанія замовила розробку CRM-системи для автоматизації своїх бізнес-процесів у зовнішньої ІТ-компанії. Всі вимоги формулює замовник, а команда розробників виконує роботи згідно з технічним завданням, погоджуючи етапи з клієнтом. Після завершення проєкту система впроваджується у бізнес замовника.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує цю співпрацю?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario2_choice" value="a"><span>Аутсорсинговий (Outsourcing)</span></label>
+                <label><input type="radio" name="scenario2_choice" value="b"><span>Продуктовий (Product-based)</span></label>
+                <label><input type="radio" name="scenario2_choice" value="c"><span>Аутстафінг (Outstaffing)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario2', 'a', 'Це аутсорсинговий проєкт: зовнішня команда виконує розробку за чіткими вимогами замовника.')">Перевірити</button>
+            <div class="result" id="result-scenario2"></div>
+        </div>
+
+        <div class="scenario" id="scenario3">
+            <h3>Сценарій 3: Аутстафінг для банку</h3>
+            <p>Великий банк наймає кількох розробників через компанію для роботи над внутрішніми системами. Розробники формально працюють у підрядника, але щодня виконують завдання та підпорядковуються менеджерам банку, інтегруючись у його команди.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує цю ситуацію?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario3_choice" value="a"><span>Аутсорсинговий (Outsourcing)</span></label>
+                <label><input type="radio" name="scenario3_choice" value="b"><span>Аутстафінг (Outstaffing)</span></label>
+                <label><input type="radio" name="scenario3_choice" value="c"><span>Продуктовий (Product-based)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario3', 'b', 'Це аутстафінг: розробники інтегруються у команду замовника, але формально працевлаштовані у підрядника.')">Перевірити</button>
+            <div class="result" id="result-scenario3"></div>
+        </div>
+
+        <div class="scenario" id="scenario4">
+            <h3>Сценарій 4: SaaS-платформа для автоматизації бізнесу</h3>
+            <p>Команда створює хмарну платформу для автоматизації бізнес-процесів, яку потім продає різним компаніям за підпискою. Всі функції та розвиток платформи визначає сама команда, орієнтуючись на потреби ринку.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує цю платформу?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario4_choice" value="a"><span>Продуктовий (Product-based)</span></label>
+                <label><input type="radio" name="scenario4_choice" value="b"><span>Сервісний (Service-based)</span></label>
+                <label><input type="radio" name="scenario4_choice" value="c"><span>Аутсорсинговий (Outsourcing)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario4', 'a', 'Це продуктовий проєкт: команда створює власний продукт і продає його багатьом клієнтам.')">Перевірити</button>
+            <div class="result" id="result-scenario4"></div>
+        </div>
+
+        <div class="scenario" id="scenario5">
+            <h3>Сценарій 5: Розробка мобільного додатку для клієнта з ЄС</h3>
+            <p>Європейська компанія замовила розробку мобільного додатку в української ІТ-компанії. Всі вимоги та дизайн надає замовник, а команда виконує розробку та тестування, регулярно звітуючи про прогрес.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує цю співпрацю?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario5_choice" value="a"><span>Аутсорсинговий (Outsourcing)</span></label>
+                <label><input type="radio" name="scenario5_choice" value="b"><span>Продуктовий (Product-based)</span></label>
+                <label><input type="radio" name="scenario5_choice" value="c"><span>Аутстафінг (Outstaffing)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario5', 'a', 'Це аутсорсинговий проєкт: команда виконує розробку за вимогами зовнішнього замовника.')">Перевірити</button>
+            <div class="result" id="result-scenario5"></div>
+        </div>
+
+        <div class="scenario" id="scenario6">
+            <h3>Сценарій 6: Внутрішній проєкт для автоматизації HR</h3>
+            <p>Велика компанія створює систему для автоматизації процесів управління персоналом. Розробкою займається команда, яка враховує специфічні потреби компанії та інтегрує систему з іншими корпоративними сервісами.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує цю ситуацію?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario6_choice" value="a"><span>Продуктовий (Product-based)</span></label>
+                <label><input type="radio" name="scenario6_choice" value="b"><span>Внутрішній (Internal)</span></label>
+                <label><input type="radio" name="scenario6_choice" value="c"><span>Аутсорсинговий (Outsourcing)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario6', 'b', 'Це внутрішній проєкт: система створюється для власних потреб компанії, а не для продажу чи зовнішнього клієнта.')">Перевірити</button>
+            <div class="result" id="result-scenario6"></div>
+        </div>
+
+        <div class="scenario" id="scenario7">
+            <h3>Сценарій 7: Розробка стартапу з США</h3>
+            <p>Американський стартап залучає українських розробників через компанію для роботи над своїм продуктом. Розробники працюють у складі команди стартапу, але формально працевлаштовані в українській компанії.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує цю співпрацю?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario7_choice" value="a"><span>Аутсорсинговий (Outsourcing)</span></label>
+                <label><input type="radio" name="scenario7_choice" value="b"><span>Аутстафінг (Outstaffing)</span></label>
+                <label><input type="radio" name="scenario7_choice" value="c"><span>Продуктовий (Product-based)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario7', 'b', 'Це аутстафінг: розробники інтегруються у команду стартапу, але формально працевлаштовані в іншій компанії.')">Перевірити</button>
+            <div class="result" id="result-scenario7"></div>
+        </div>
+
+        <div class="scenario" id="scenario8">
+            <h3>Сценарій 8: Slack та українська команда</h3>
+            <p>Компанія Slack вирішила швидко додати новий функціонал до свого продукту та звернулася до української ІТ-компанії для розробки певних модулів. Українська команда працює над завданнями, визначеними Slack, і регулярно звітує про прогрес.</p>
+            <h4>Завдання: Який тип проєкту найкраще описує співпрацю Slack з українською командою?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario8_choice" value="a"><span>Аутстафінг (Outstaffing)</span></label>
+                <label><input type="radio" name="scenario8_choice" value="b"><span>Аутсорсинговий (Outsourcing)</span></label>
+                <label><input type="radio" name="scenario8_choice" value="c"><span>Продуктовий (Product-based)</span></label>
+            </div>
+            <button onclick="checkScenario('scenario8', 'b', 'Це аутсорсинговий проєкт, оскільки Slack (замовник) передав частину робіт із розробки зовнішній команді (виконавцю в Україні) для досягнення своїх бізнес-цілей, таких як швидке додавання функціоналу та масштабування.')">Перевірити</button>
+            <div class="result" id="result-scenario8"></div>
+        </div>
+
+        <div class="scenario" id="scenario9">
+            <h3>Сценарій 9: Google та розробка Android</h3>
+            <p>Компанія Google створює та постійно покращує операційну систему Android для телефонів. Це їх власний великий проєкт.</p>
+            <h4>Завдання: Який тип проєкту представляє розробка Android для Google?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario9_choice" value="a"><span>Сервісний проєкт для виробників смартфонів</span></label>
+                <label><input type="radio" name="scenario9_choice" value="b"><span>Продуктовий проєкт Google</span></label>
+                <label><input type="radio" name="scenario9_choice" value="c"><span>Аутсорсинговий проєкт</span></label>
+            </div>
+            <button onclick="checkScenario('scenario9', 'b', 'Розробка Android є продуктовим проєктом для Google. Компанія створює, розвиває та володіє цим продуктом, який є основою для багатьох пристроїв та сервісів.')">Перевірити</button>
+            <div class="result" id="result-scenario9"></div>
+        </div>
+
+        <div class="scenario" id="scenario10">
+            <h3>Сценарій 10: IoT-проєкт для компанії Ring</h3>
+            <p>Міжнародна компанія Ring, що спеціалізується на розумних пристроях для безпеки, залучила українську команду розробників для створення нових IoT-рішень. Українські фахівці працюють над окремими модулями, інтегрують їх у глобальну систему Ring, але не володіють кінцевим продуктом. Всі технічні вимоги та контроль залишаються за Ring.</p>
+            <h4>Завдання: Який тип співпраці тут реалізовано?</h4>
+            <div class="options">
+                <label><input type="radio" name="scenario10_choice" value="a"><span>Аутсорсинговий проєкт для Ring</span></label>
+                <label><input type="radio" name="scenario10_choice" value="b"><span>Продуктовий проєкт української команди</span></label>
+                <label><input type="radio" name="scenario10_choice" value="c"><span>Аутстафінг інженерів до Ring</span></label>
+            </div>
+            <button onclick="checkScenario('scenario10', 'a', 'Це аутсорсинговий проєкт. Ring передала спеціалізовану IoT-розробку зовнішній команді в Україні, щоб скористатися їхньою експертизою та прискорити вдосконалення своїх продуктів.')">Перевірити</button>
+            <div class="result" id="result-scenario10"></div>
+        </div>
+
+    </div>
+
+    <script>
+        function showExplanation(buttonElement, explanationText) {
+            const resultDiv = buttonElement.parentNode;
+            resultDiv.innerHTML = '<strong>Неправильно.</strong> <div class="explanation">' + explanationText + '</div>';
+        }
+
+        function checkScenario(scenarioId, correctAnswer, explanationText) {
+            const resultDiv = document.getElementById('result-' + scenarioId);
+            const choices = document.getElementsByName(scenarioId + '_choice');
+            let userAnswer;
+            for (const choice of choices) {
+                if (choice.checked) {
+                    userAnswer = choice.value;
+                    break;
+                }
+            }
+
+            if (userAnswer) {
+                if (userAnswer === correctAnswer) {
+                    resultDiv.innerHTML = '<strong>Правильно!</strong> <div class="explanation">' + explanationText + '</div>';
+                    resultDiv.className = 'result correct';
+                } else {
+                    const escapedExplanation = explanationText.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    resultDiv.innerHTML = '<strong>Неправильно.</strong> <button class="show-explanation-btn" onclick="showExplanation(this, \'' + escapedExplanation + '\')">Показати пояснення</button>';
+                    resultDiv.className = 'result incorrect';
+                }
+            } else {
+                resultDiv.innerHTML = 'Будь ласка, оберіть варіант відповіді.';
+                resultDiv.className = 'result incorrect'; // Or a neutral class
+            }
+        }
+    </script>
+</body>
+</html>
