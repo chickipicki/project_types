@@ -182,6 +182,72 @@
         .show-explanation-btn:hover {
             background-color: #5a6268;
         }
+        
+        /* Admin Panel Styles */
+        #admin-panel {
+            margin-top: 30px;
+            border-top: 2px solid #007bff;
+            padding-top: 20px;
+        }
+        
+        #admin-panel h2 {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        
+        .admin-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .admin-btn {
+            background-color: #007bff;
+            flex: 1;
+        }
+        
+        .admin-btn:hover {
+            background-color: #0069d9;
+        }
+        
+        .admin-btn-danger {
+            background-color: #dc3545;
+        }
+        
+        .admin-btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        #all-results-container {
+            margin-top: 20px;
+        }
+        
+        #all-results-container h3 {
+            color: #343a40;
+            margin-top: 25px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        #all-results-container ul {
+            list-style-type: none;
+            padding-left: 10px;
+        }
+        
+        #all-results-container li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        
+        #all-results-container li.correct {
+            border-left: 4px solid #28a745;
+        }
+        
+        #all-results-container li.incorrect {
+            border-left: 4px solid #dc3545;
+        }
 
         /* Modal Styles */
         .modal {
@@ -373,10 +439,34 @@
 
     </div>
 
+    <div id="admin-panel" style="display: none;" class="simulator-container">
+        <h2>Панель адміністратора</h2>
+        <div class="admin-controls">
+            <button id="showAllResultsBtn" class="admin-btn">Показати результати всіх студентів</button>
+            <button id="clearAllResultsBtn" class="admin-btn admin-btn-danger">Очистити всі результати</button>
+        </div>
+        <div id="all-results-container"></div>
+    </div>
+
     <script>
         let studentName = ''; // Variable to store student's name
+        let isAdmin = false; // Flag for admin mode
 
         document.addEventListener('DOMContentLoaded', (event) => {
+            // Check if admin mode is enabled via URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            isAdmin = urlParams.get('admin') === 'true';
+            
+            if (isAdmin) {
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('showAllResultsBtn').addEventListener('click', showAllResults);
+                document.getElementById('clearAllResultsBtn').addEventListener('click', clearAllResults);
+                showAllResults(); // Show results immediately in admin mode
+            } else {
+                // Приховуємо адмін-панель для звичайних користувачів
+                document.getElementById('admin-panel').style.display = 'none';
+            }
+            
             // Show the modal when the page loads
             document.getElementById('nameModal').style.display = 'block';
         });
@@ -398,8 +488,8 @@
             const scenarioDiv = document.getElementById(scenarioId);
             const selectedOption = scenarioDiv.querySelector(`input[name="${scenarioId}_choice"]:checked`);
             const resultDiv = document.getElementById(`result-${scenarioId}`);
-            const checkButton = scenarioDiv.querySelector('button');
-
+            const allOptions = scenarioDiv.querySelectorAll(`input[name="${scenarioId}_choice"]`);
+            
             if (!selectedOption) {
                 alert('Будь ласка, оберіть відповідь.');
                 return;
@@ -416,8 +506,13 @@
                 correctnessText.innerHTML = 'Правильно!';
                 resultDiv.classList.add('correct');
                 resultDiv.appendChild(correctnessText);
+                
+                // Disable all radio buttons when correct answer is selected
+                allOptions.forEach(option => {
+                    option.disabled = true;
+                });
             } else {
-                correctnessText.innerHTML = 'Неправильно!';
+                correctnessText.innerHTML = 'Неправильно! Спробуйте ще раз.';
                 resultDiv.classList.add('incorrect');
                 resultDiv.appendChild(correctnessText);
 
@@ -427,12 +522,12 @@
                 showExplanationButton.classList.add('show-explanation-btn');
                 showExplanationButton.onclick = () => showExplanation(scenarioId, explanationText);
                 resultDiv.appendChild(showExplanationButton);
+                
+                // Allow to change answer - don't disable options
+                selectedOption.checked = false; // Uncheck the wrong answer
             }
 
             resultDiv.style.display = 'block';
-
-            // Disable the check button after answering
-            checkButton.disabled = true;
 
             // Save the result
             saveResult(scenarioId, userAnswer, isCorrect, correctAnswerLetter, explanationText);
@@ -500,11 +595,14 @@
                          resultsHtml += '<li>Немає результатів для цього студента.</li>';
                     } else {
                          allQuizResults[student].forEach(res => {
-                             resultsHtml += `<li>
+                             const resultClass = res.isCorrect ? 'correct' : 'incorrect';
+                             resultsHtml += `<li class="${resultClass}">
                                  <strong>Сценарій ${res.scenarioId.replace('scenario', '')}:</strong>
-                                 Відповідь - ${res.studentAnswer} (${res.isCorrect ? 'Правильно' : 'Неправильно'}).
-                                 Правильна відповідь: ${res.correctAnswer}.
-                                 <small>(${res.timestamp})</small>
+                                 Відповідь студента: ${res.studentAnswer} 
+                                 <span class="${resultClass}">(${res.isCorrect ? 'Правильно ✓' : 'Неправильно ✗'})</span><br>
+                                 <strong>Правильна відповідь:</strong> ${res.correctAnswer}<br>
+                                 <div class="explanation"><strong>Пояснення:</strong> ${res.explanation}</div>
+                                 <small>Час відповіді: ${res.timestamp}</small>
                              </li>`;
                          });
                      }
@@ -513,11 +611,16 @@
              }
 
              allResultsContainer.innerHTML = resultsHtml;
-             // Add event listener to the new button
-             const showResultsButton = document.getElementById('showAllResultsBtn');
-             if (showResultsButton) {
-                 showResultsButton.addEventListener('click', showAllResults);
+         }
+         
+         // Функція для очищення результатів (для адміністратора)
+         function clearAllResults() {
+             if (confirm('Ви впевнені, що хочете видалити всі результати? Цю дію неможливо скасувати.')) {
+                 localStorage.removeItem('allQuizResults');
+                 showAllResults(); // Оновити відображення після очищення
+                 alert('Всі результати видалено.');
              }
+         }
 
     </script>
 </body>
