@@ -340,7 +340,7 @@
                 <label><input type="radio" name="scenario8_choice" value="b"><span>Аутсорсинговий (Outsourcing)</span></label>
                 <label><input type="radio" name="scenario8_choice" value="c"><span>Продуктовий (Product-based)</span></label>
             </div>
-            <button onclick="checkScenario('scenario8', 'b', 'Чи працює команда над власним продуктом, чи виконує конкретні завдання для продукту іншої компанії?')">Перевірити</button>
+            <button onclick="checkScenario('scenario8', 'b', 'Чи працює команда над власним продуктом, чи виконує конкретні завдання для продукту іншоїх компанії?')">Перевірити</button>
             <div class="result" id="result-scenario8"></div>
         </div>
 
@@ -374,233 +374,151 @@
     </div>
 
     <script>
-        let studentName = '';
-        let currentStudentName = '';
-        let studentAnswers = {};
-        let allStudentResults = JSON.parse(localStorage.getItem('allStudentResults')) || [];
+        let studentName = ''; // Variable to store student's name
 
-        function isAdmin() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('admin') === 'true';
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const nameModal = document.getElementById('nameModal');
-            const quizContent = document.getElementById('quiz-content');
-            const showResultsButton = document.getElementById('showAllResultsBtn');
-
-            if (nameModal) nameModal.style.display = 'block'; // Show modal on page load
-            if (quizContent) quizContent.style.display = 'none'; // Hide quiz content initially
-
-            if (isAdmin()) {
-                if (showResultsButton) {
-                    showResultsButton.style.display = 'block';
-                }
-            } else {
-                if (showResultsButton) {
-                    showResultsButton.style.display = 'none';
-                }
-            }
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Show the modal when the page loads
+            document.getElementById('nameModal').style.display = 'block';
         });
 
         function startQuiz() {
-            const studentNameInput = document.getElementById('studentName');
-            currentStudentName = studentNameInput.value.trim();
-            if (currentStudentName === '') {
-                alert('Будь ласка, введіть ваше ім\'я.');
-                return;
+            const nameInput = document.getElementById('studentNameModal');
+            studentName = nameInput.value.trim();
+
+            if (studentName) {
+                document.getElementById('nameModal').style.display = 'none';
+                document.getElementById('quiz-content').style.display = 'block';
+                console.log('Тест розпочато для:', studentName);
+            } else {
+                alert('Будь ласка, введіть ваше ім\'я, щоб почати тест.');
             }
-            document.getElementById('student-info-container').style.display = 'none';
-            document.getElementById('quiz-content').style.display = 'block';
-            // Опціонально: зберегти ім'я студента в localStorage, якщо потрібно для інших цілей
-            // localStorage.setItem('currentStudent', currentStudentName);
         }
 
-        function checkScenario(scenarioId, correctAnswer, explanation) {
-            if (currentStudentName === '') {
-                alert('Будь ласка, спочатку вкажіть своє ім\'я та почніть тест.');
-                // Можливо, перенаправити назад до форми введення імені або показати її
-                document.getElementById('student-info-container').style.display = 'block';
-                document.getElementById('quiz-content').style.display = 'none';
-                return;
-            }
-
-
+        function checkScenario(scenarioId, correctAnswerLetter, explanationText) {
+            const scenarioDiv = document.getElementById(scenarioId);
+            const selectedOption = scenarioDiv.querySelector(`input[name="${scenarioId}_choice"]:checked`);
             const resultDiv = document.getElementById(`result-${scenarioId}`);
-            const selectedOption = document.querySelector(`input[name="${scenarioId}_choice"]:checked`);
+            const checkButton = scenarioDiv.querySelector('button');
 
             if (!selectedOption) {
-                resultDiv.innerHTML = "Будь ласка, оберіть варіант відповіді.";
-                resultDiv.className = 'result incorrect';
+                alert('Будь ласка, оберіть відповідь.');
                 return;
             }
 
             const userAnswer = selectedOption.value;
-            const isCorrect = userAnswer === correctAnswer;
+            const isCorrect = userAnswer === correctAnswerLetter;
 
+            resultDiv.innerHTML = ''; // Clear previous result
+            resultDiv.classList.remove('correct', 'incorrect');
+
+            const correctnessText = document.createElement('p');
             if (isCorrect) {
-                resultDiv.innerHTML = `<strong>Правильно!</strong> ${explanation}`;
-                resultDiv.className = 'result correct';
+                correctnessText.innerHTML = 'Правильно!';
+                resultDiv.classList.add('correct');
+                resultDiv.appendChild(correctnessText);
             } else {
-                resultDiv.innerHTML = `<strong>Неправильно.</strong> <button class="show-explanation-btn" onclick="showExplanation('${scenarioId}', '${explanation.replace(/'/g, "\\'")}')">Показати підказку</button>`;
-                resultDiv.className = 'result incorrect';
+                correctnessText.innerHTML = 'Неправильно!';
+                resultDiv.classList.add('incorrect');
+                resultDiv.appendChild(correctnessText);
+
+                // Add explanation button only if incorrect
+                const showExplanationButton = document.createElement('button');
+                showExplanationButton.textContent = 'Показати пояснення';
+                showExplanationButton.classList.add('show-explanation-btn');
+                showExplanationButton.onclick = () => showExplanation(scenarioId, explanationText);
+                resultDiv.appendChild(showExplanationButton);
             }
 
-            saveResult(scenarioId, userAnswer, isCorrect, correctAnswer, explanation);
+            resultDiv.style.display = 'block';
+
+            // Disable the check button after answering
+            checkButton.disabled = true;
+
+            // Save the result
+            saveResult(scenarioId, userAnswer, isCorrect, correctAnswerLetter, explanationText);
         }
 
         function showExplanation(scenarioId, explanation) {
             const resultDiv = document.getElementById(`result-${scenarioId}`);
-            const explanationDiv = resultDiv.querySelector('.explanation');
-            if (explanationDiv) {
-                explanationDiv.innerHTML = `<strong>Пояснення:</strong> ${explanation}`;
-            } else {
-                resultDiv.innerHTML += `<div class="explanation"><strong>Пояснення:</strong> ${explanation}</div>`;
+            let explanationDiv = resultDiv.querySelector('.explanation');
+            if (!explanationDiv) {
+                 explanationDiv = document.createElement('div');
+                 explanationDiv.className = 'explanation';
+                 resultDiv.appendChild(explanationDiv);
             }
+            explanationDiv.innerHTML = `<strong>Пояснення:</strong> ${explanation}`;
+            // Hide the button after showing explanation
+            const explanationButton = resultDiv.querySelector('.show-explanation-btn');
+            if(explanationButton) explanationButton.style.display = 'none';
         }
 
-        function saveResult(scenarioId, userAnswer, isCorrect, correctAnswerText, explanationText) {
-            let allStudentResults = JSON.parse(localStorage.getItem('allQuizResults')) || {};
-            
-            if (!allStudentResults[currentStudentName]) {
-                allStudentResults[currentStudentName] = [];
+        function saveResult(scenarioId, userAnswer, isCorrect, correctAnswerLetter, explanationText) {
+            let allQuizResults = JSON.parse(localStorage.getItem('allQuizResults')) || {};
+
+            // Use studentName as the key
+            if (!allQuizResults[studentName]) {
+                allQuizResults[studentName] = [];
             }
-            
-            allStudentResults[currentStudentName].push({
+
+            // Check if result for this scenario already exists for this student
+            const existingResultIndex = allQuizResults[studentName].findIndex(res => res.scenarioId === scenarioId);
+
+            const newResult = {
                 scenarioId: scenarioId,
                 studentAnswer: userAnswer,
                 isCorrect: isCorrect,
-                correctAnswer: correctAnswerText, // Зберігаємо текст правильної відповіді
+                correctAnswer: correctAnswerLetter, // Зберігаємо текст правильної відповіді
                 explanation: explanationText,
                 timestamp: new Date().toLocaleString()
-            });
-            
-            localStorage.setItem('allQuizResults', JSON.stringify(allStudentResults));
-            console.log('Результат збережено для студента:', currentStudentName, allStudentResults[currentStudentName]);
-        }
+            };
 
-        // Приклад функції для відображення результатів (можна розширити для показу на сторінці)
-        function viewStudentResults() {
-            const studentName = prompt("Введіть ім'я студента, результати якого хочете переглянути:");
-            if (!studentName) return;
-
-            const allResults = JSON.parse(localStorage.getItem('allQuizResults'));
-            if (allResults && allResults[studentName]) {
-                let resultsHtml = `<h2>Результати для студента: ${studentName}</h2><ul>`;
-                allResults[studentName].forEach(res => {
-                    resultsHtml += `<li>
-                        <strong>Сценарій ${res.scenarioId.replace('scenario', '')}:</strong> 
-                        Відповідь - ${res.studentAnswer} (${res.isCorrect ? 'Правильно' : 'Неправильно'}). 
-                        Правильна відповідь: ${res.correctAnswer}.
-                        <small>(${res.timestamp})</small>
-                    </li>`;
-                });
-                resultsHtml += '</ul>';
-                
-                // Створюємо новий div для відображення або використовуємо існуючий
-                let displayDiv = document.getElementById('student-results-display');
-                if (!displayDiv) {
-                    displayDiv = document.createElement('div');
-                    displayDiv.id = 'student-results-display';
-                    document.querySelector('.simulator-container').appendChild(displayDiv);
-                }
-                displayDiv.innerHTML = resultsHtml;
+            if (existingResultIndex > -1) {
+                // Update existing result
+                allQuizResults[studentName][existingResultIndex] = newResult;
             } else {
-                alert('Результати для цього студента не знайдено.');
+                // Add new result
+                allQuizResults[studentName].push(newResult);
             }
+
+            localStorage.setItem('allQuizResults', JSON.stringify(allQuizResults));
+            console.log('Результат збережено для студента:', studentName, allQuizResults[studentName]);
         }
-        
-        // Можна додати кнопку для виклику viewStudentResults
-        // Наприклад, в кінці .simulator-container додати:
-        // <button onclick="viewStudentResults()" style="margin-top: 30px;">Переглянути результати студента</button>
+
+        function showAllResults() {
+            const allResultsContainer = document.getElementById('all-results-container');
+            if (!allResultsContainer) return;
+
+            const allQuizResults = JSON.parse(localStorage.getItem('allQuizResults')) || {};
+            let resultsHtml = '<h2>Результати всіх студентів</h2>';
+
+            if (Object.keys(allQuizResults).length === 0) {
+                resultsHtml += '<p>Немає збережених результатів.</p>';
+            } else {
+                for (const student in allQuizResults) {
+                    resultsHtml += `<h3>${student}</h3><ul>`;
+                    if (allQuizResults[student].length === 0) {
+                         resultsHtml += '<li>Немає результатів для цього студента.</li>';
+                    } else {
+                         allQuizResults[student].forEach(res => {
+                             resultsHtml += `<li>
+                                 <strong>Сценарій ${res.scenarioId.replace('scenario', '')}:</strong>
+                                 Відповідь - ${res.studentAnswer} (${res.isCorrect ? 'Правильно' : 'Неправильно'}).
+                                 Правильна відповідь: ${res.correctAnswer}.
+                                 <small>(${res.timestamp})</small>
+                             </li>`;
+                         });
+                     }
+                     resultsHtml += '</ul>';
+                 }
+             }
+
+             allResultsContainer.innerHTML = resultsHtml;
+             // Add event listener to the new button
+             const showResultsButton = document.getElementById('showAllResultsBtn');
+             if (showResultsButton) {
+                 showResultsButton.addEventListener('click', showAllResults);
+             }
 
     </script>
-        </div> <!-- Closing quiz-content -->
-        <div id="all-results-container" style="margin-top: 30px; padding: 20px; background-color: #e9ecef; border-radius: 8px; text-align: left;">
-             <!-- Results will be displayed here by showAllResults() -->
-        </div>
-    </div>
-<script>
-    // This script block is now primarily for the quiz logic itself
-    // The isAdmin and DOMContentLoaded for admin button visibility is handled in the script tag in the <head> or earlier in <body>
-    let studentNameGlobal = "";
-    // studentAnswers is already defined above, ensure no re-declaration if merging scripts
-    // let studentAnswers = {}; 
-
-// This logic is moved to the main DOMContentLoaded listener
-
-    function startQuiz() {
-        const nameInput = document.getElementById('studentNameModal');
-        studentNameGlobal = nameInput.value.trim();
-
-        if (studentNameGlobal === "") {
-            alert("Будь ласка, введіть ваше ім'я.");
-            return;
-        }
-
-        document.getElementById('nameModal').style.display = 'none';
-        const quizContent = document.getElementById('quiz-content');
-        if (quizContent) {
-            quizContent.style.display = 'block';
-        }
-    }
-
-    function checkScenario(scenarioId, correctAnswerLetter, explanation) {
-        const choices = document.getElementsByName(scenarioId + '_choice');
-        let selectedValue;
-        for (const choice of choices) {
-            if (choice.checked) {
-                selectedValue = choice.value;
-                break;
-            }
-        }
-
-        const resultDiv = document.getElementById('result-' + scenarioId);
-        if (!resultDiv) {
-            console.error('Result div not found for ' + scenarioId);
-            return;
-        }
-        
-        resultDiv.innerHTML = ''; // Clear previous result
-
-        if (selectedValue) {
-            const isCorrect = selectedValue === correctAnswerLetter;
-            
-            const resultMessage = document.createElement('p');
-            if (isCorrect) {
-                resultMessage.textContent = 'Правильно!';
-                resultDiv.className = 'result correct';
-            } else {
-                resultMessage.textContent = 'Неправильно!';
-                resultDiv.className = 'result incorrect';
-
-                const explanationButton = document.createElement('button');
-                explanationButton.textContent = 'Показати підказку';
-                explanationButton.className = 'show-explanation-btn';
-                explanationButton.onclick = function() {
-                    const explanationDiv = document.createElement('p');
-                    explanationDiv.textContent = explanation;
-                    explanationDiv.className = 'explanation';
-                    resultDiv.appendChild(explanationDiv);
-                    explanationButton.style.display = 'none'; // Hide button after showing explanation
-                };
-                resultDiv.appendChild(resultMessage);
-                resultDiv.appendChild(explanationButton);
-            }
-            
-            // Remove the old explanation display logic
-            // const explanationDiv = document.createElement('p');
-            // explanationDiv.textContent = explanation;
-            // explanationDiv.className = 'explanation';
-            // resultDiv.appendChild(explanationDiv);
-
-        } else {
-            resultDiv.textContent = 'Будь ласка, оберіть варіант відповіді.';
-            resultDiv.className = 'result incorrect';
-        }
-    }
-
-
-</script>
 </body>
 </html>
