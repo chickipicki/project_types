@@ -203,7 +203,6 @@
             border: 1px solid #888;
             width: 80%; /* Could be more or less, depending on screen size */
             max-width: 500px;
-            border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             text-align: center;
         }
@@ -568,36 +567,35 @@
             const isCorrect = selectedValue === correctAnswerLetter;
             
             const resultMessage = document.createElement('p');
-            resultMessage.textContent = isCorrect ? 'Правильно!' : 'Неправильно.';
-            resultDiv.className = 'result ' + (isCorrect ? 'correct' : 'incorrect');
-            resultDiv.appendChild(resultMessage);
+            if (isCorrect) {
+                resultMessage.textContent = 'Правильно!';
+                resultDiv.className = 'result correct';
+            } else {
+                resultMessage.textContent = 'Неправильно!';
+                resultDiv.className = 'result incorrect';
 
-            const explanationPara = document.createElement('p');
-            explanationPara.className = 'explanation';
-            explanationPara.textContent = explanation;
-            resultDiv.appendChild(explanationPara);
-            
-            let scenarioTitle = 'N/A';
-            let questionText = 'N/A';
-            const scenarioElement = document.getElementById(scenarioId);
-            if (scenarioElement) {
-                const h3 = scenarioElement.querySelector('h3');
-                if (h3) scenarioTitle = h3.textContent;
-                const h4 = scenarioElement.querySelector('h4');
-                if (h4) questionText = h4.textContent;
+                const explanationButton = document.createElement('button');
+                explanationButton.textContent = 'Показати підказку';
+                explanationButton.className = 'show-explanation-btn';
+                explanationButton.onclick = function() {
+                    const explanationDiv = document.createElement('p');
+                    explanationDiv.textContent = explanation;
+                    explanationDiv.className = 'explanation';
+                    resultDiv.appendChild(explanationDiv);
+                    explanationButton.style.display = 'none'; // Hide button after showing explanation
+                };
+                resultDiv.appendChild(resultMessage);
+                resultDiv.appendChild(explanationButton);
             }
-
-            studentAnswers[scenarioId] = {
-                student: studentNameGlobal,
-                choice: selectedValue,
-                correctAnswer: correctAnswerLetter,
-                isCorrect: isCorrect,
-                scenarioTitle: scenarioTitle,
-                questionText: questionText
-            };
             
+            // Remove the old explanation display logic
+            // const explanationDiv = document.createElement('p');
+            // explanationDiv.textContent = explanation;
+            // explanationDiv.className = 'explanation';
+            // resultDiv.appendChild(explanationDiv);
+
         } else {
-            resultDiv.innerHTML = 'Будь ласка, виберіть варіант.';
+            resultDiv.textContent = 'Будь ласка, оберіть варіант відповіді.';
             resultDiv.className = 'result incorrect';
         }
     }
