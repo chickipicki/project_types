@@ -182,22 +182,67 @@
         .show-explanation-btn:hover {
             background-color: #5a6268;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        .modal-content input[type="text"] {
+            width: calc(100% - 42px); /* Adjusted for padding and border */
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        .modal-content button {
+            /* Using existing button styles by default */
+        }
     </style>
 </head>
 <body>
+    <div id="nameModal" class="modal">
+        <div class="modal-content">
+            <h2>Введіть ваше ім'я</h2>
+            <input type="text" id="studentNameModal" placeholder="Ваше ім'я" required>
+            <button onclick="startQuiz()">Почати тест</button>
+        </div>
+    </div>
+
     <div class="simulator-container">
         <h1>Класифікація ІТ-проєктів</h1>
         <p>Проаналізуйте наведені сценарії, визначте тип ІТ-проєкту та прийміть найкраще рішення.</p>
-
-        <div id="student-info-container">
-            <h2>Введіть ваші дані</h2>
-            <label for="studentName">Ім'я студента:</label>
-            <input type="text" id="studentName" name="studentName" required>
-            <button onclick="startQuiz()">Почати тест</button>
-        </div>
-
-        <div id=
-            <h3>Сценарій 1: Стартап "Швидка доставка їжі"</h3>
+        
+        <div id="quiz-content" style="display: none;">
+            <div class="scenario" id="scenario1"> <!-- Corrected the malformed div -->
+                <h3>Сценарій 1: Стартап "Швидка доставка їжі"</h3>
             <p>Молода команда ентузіастів вирішила створити власний мобільний додаток для швидкого замовлення їжі. Вони самостійно придумують ідею, розробляють функціонал, тестують продукт, запускають його на ринок і отримують прибуток від кінцевих користувачів. Всі рішення приймаються всередині команди, а додаток є їхньою інтелектуальною власністю. Команда не працює на замовлення сторонньої компанії, а створює власний продукт для продажу на ринку.</p>
             <h4>Завдання: Який тип проєкту найкраще описує створення цього додатку?</h4>
             <div class="options">
@@ -330,7 +375,34 @@
     </div>
 
     <script>
+        let studentName = '';
         let currentStudentName = '';
+        let studentAnswers = {};
+        let allStudentResults = JSON.parse(localStorage.getItem('allStudentResults')) || [];
+
+        function isAdmin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('admin') === 'true';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameModal = document.getElementById('nameModal');
+            const quizContent = document.getElementById('quiz-content');
+            const showResultsButton = document.getElementById('showAllResultsBtn');
+
+            if (nameModal) nameModal.style.display = 'block'; // Show modal on page load
+            if (quizContent) quizContent.style.display = 'none'; // Hide quiz content initially
+
+            if (isAdmin()) {
+                if (showResultsButton) {
+                    showResultsButton.style.display = 'block';
+                }
+            } else {
+                if (showResultsButton) {
+                    showResultsButton.style.display = 'none';
+                }
+            }
+        });
 
         function startQuiz() {
             const studentNameInput = document.getElementById('studentName');
@@ -446,6 +518,122 @@
     </script>
     <div style="text-align: center; margin-top: 30px;">
         <button onclick="viewStudentResults()" style="background-color: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Переглянути результати студента</button>
+        </div> <!-- Closing quiz-content -->
+        <div id="all-results-container" style="margin-top: 30px; padding: 20px; background-color: #e9ecef; border-radius: 8px; text-align: left;">
+             <!-- Results will be displayed here by showAllResults() -->
+        </div>
+        <button id="showAllResultsBtn" onclick="showAllResults()" style="margin: 20px auto; display: none;">Показати всі результати</button>
     </div>
+<script>
+    // This script block is now primarily for the quiz logic itself
+    // The isAdmin and DOMContentLoaded for admin button visibility is handled in the script tag in the <head> or earlier in <body>
+    let studentNameGlobal = "";
+    // studentAnswers is already defined above, ensure no re-declaration if merging scripts
+    // let studentAnswers = {}; 
+
+// This logic is moved to the main DOMContentLoaded listener
+
+    function startQuiz() {
+        const nameInput = document.getElementById('studentNameModal');
+        studentNameGlobal = nameInput.value.trim();
+
+        if (studentNameGlobal === "") {
+            alert("Будь ласка, введіть ваше ім'я.");
+            return;
+        }
+
+        document.getElementById('nameModal').style.display = 'none';
+        const quizContent = document.getElementById('quiz-content');
+        if (quizContent) {
+            quizContent.style.display = 'block';
+        }
+    }
+
+    function checkScenario(scenarioId, correctAnswerLetter, explanation) {
+        const choices = document.getElementsByName(scenarioId + '_choice');
+        let selectedValue;
+        for (const choice of choices) {
+            if (choice.checked) {
+                selectedValue = choice.value;
+                break;
+            }
+        }
+
+        const resultDiv = document.getElementById('result-' + scenarioId);
+        if (!resultDiv) {
+            console.error('Result div not found for ' + scenarioId);
+            return;
+        }
+        
+        resultDiv.innerHTML = ''; // Clear previous result
+
+        if (selectedValue) {
+            const isCorrect = selectedValue === correctAnswerLetter;
+            
+            const resultMessage = document.createElement('p');
+            resultMessage.textContent = isCorrect ? 'Правильно!' : 'Неправильно.';
+            resultDiv.className = 'result ' + (isCorrect ? 'correct' : 'incorrect');
+            resultDiv.appendChild(resultMessage);
+
+            const explanationPara = document.createElement('p');
+            explanationPara.className = 'explanation';
+            explanationPara.textContent = explanation;
+            resultDiv.appendChild(explanationPara);
+            
+            let scenarioTitle = 'N/A';
+            let questionText = 'N/A';
+            const scenarioElement = document.getElementById(scenarioId);
+            if (scenarioElement) {
+                const h3 = scenarioElement.querySelector('h3');
+                if (h3) scenarioTitle = h3.textContent;
+                const h4 = scenarioElement.querySelector('h4');
+                if (h4) questionText = h4.textContent;
+            }
+
+            studentAnswers[scenarioId] = {
+                student: studentNameGlobal,
+                choice: selectedValue,
+                correctAnswer: correctAnswerLetter,
+                isCorrect: isCorrect,
+                scenarioTitle: scenarioTitle,
+                questionText: questionText
+            };
+            
+        } else {
+            resultDiv.innerHTML = 'Будь ласка, виберіть варіант.';
+            resultDiv.className = 'result incorrect';
+        }
+    }
+
+    function showAllResults() {
+        const resultsContainer = document.getElementById('all-results-container');
+        if (!resultsContainer) {
+            console.error("all-results-container not found");
+            return;
+        }
+
+        if (Object.keys(studentAnswers).length === 0) {
+            resultsContainer.innerHTML = "<h2>Результати тесту для " + (studentNameGlobal || "студента") + ":</h2><p>Ви ще не відповіли на жодне питання.</p>";
+            return;
+        }
+
+        let summaryHtml = "<h2>Результати тесту для " + studentNameGlobal + ":</h2>";
+        summaryHtml += "<table border='1' style='width:100%; border-collapse: collapse; margin-top:15px;'><thead><tr><th style='padding:8px;'>Сценарій</th><th style='padding:8px;'>Завдання</th><th style='padding:8px;'>Ваша відповідь</th><th style='padding:8px;'>Правильна відповідь</th><th style='padding:8px;'>Результат</th></tr></thead><tbody>";
+        
+        for (const scenarioId in studentAnswers) {
+            const answer = studentAnswers[scenarioId];
+            summaryHtml += `<tr>
+                <td style='padding:8px;'>${answer.scenarioTitle}</td>
+                <td style='padding:8px;'>${answer.questionText}</td>
+                <td style='padding:8px;'>${answer.choice}</td>
+                <td style='padding:8px;'>${answer.correctAnswer}</td>
+                <td style='padding:8px; color: ${answer.isCorrect ? 'green' : 'red'};'>${answer.isCorrect ? 'Правильно' : 'Неправильно'}</td>
+            </tr>`;
+        }
+        summaryHtml += "</tbody></table>";
+        
+        resultsContainer.innerHTML = summaryHtml;
+    }
+</script>
 </body>
 </html>
